@@ -6,7 +6,7 @@ Paper-faithful reproduction of the five mechanisms. Exp. A uses a full TD3 agent
 |---|---|---|
 | A. Energy savings (TD3 adaptive activation) | 20.2% | 18.2% |
 | B. Communication payload reduction | 46.2% | 45.6% |
-| C. Mapping accuracy gain (information gain) | 9.5% | 12.3% |
+| C. Mapping F1 gain (information gain vs GREEDY) | 13.5% | 12.3% |
 | D. FedAvg accuracy gain vs local (NN, non-IID) | 26.4% | (qualitative) |
 | E. Digital-twin sync reduction | 74.8% | (qualitative) |
 

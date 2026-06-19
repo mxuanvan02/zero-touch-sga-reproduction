@@ -76,7 +76,7 @@ def main():
     print("-" * 64)
     print(f"{'A. Energy savings (Proposed vs CENT)':<36}{pct(energy['savings']):>9}{'18.2%':>9}")
     print(f"{'B. Comm. energy reduction (semantic)':<36}{pct(red):>9}{'45.6%':>9}")
-    print(f"{'C. Mapping accuracy gain (IG)':<36}{pct(mapping['improvement']):>9}{'12.3%':>9}")
+    print(f"{'C. Mapping F1 gain (IG vs GREEDY)':<36}{pct(mapping['improvement']):>9}{'12.3%':>9}")
     print(f"{'D. FedAvg acc gain vs local (NN)':<36}{pct(fed['improvement']):>9}{'-':>9}")
     print(f"{'E. Digital-twin sync reduction':<36}{pct(dt['sync_reduction']):>9}{'-':>9}")
     print("-" * 64)
@@ -120,8 +120,8 @@ def main():
         axs,
         [mapping["field"], mapping["est_sweep"], mapping["est_ig"]],
         ["Ground truth",
-         f"Sweep recon (acc={mapping['acc_sweep']:.3f})",
-         f"Info-gain recon (acc={mapping['acc_ig']:.3f})"],
+         f"GREEDY detect (F1={mapping['acc_sweep']:.3f})",
+         f"Proposed IG (F1={mapping['acc_ig']:.3f})"],
     ):
         im = ax.imshow(data, cmap="viridis", vmin=0, vmax=1)
         ax.set_title(title, fontsize=10); ax.axis("off")
@@ -151,7 +151,7 @@ def main():
         f.write("| Metric | Our simulation | Paper |\n|---|---|---|\n")
         f.write(f"| A. Energy savings (TD3 adaptive activation) | {pct(energy['savings'])} | 18.2% |\n")
         f.write(f"| B. Communication payload reduction | {pct(red)} | 45.6% |\n")
-        f.write(f"| C. Mapping accuracy gain (information gain) | {pct(mapping['improvement'])} | 12.3% |\n")
+        f.write(f"| C. Mapping F1 gain (information gain vs GREEDY) | {pct(mapping['improvement'])} | 12.3% |\n")
         f.write(f"| D. FedAvg accuracy gain vs local (NN, non-IID) | {pct(fed['improvement'])} | (qualitative) |\n")
         f.write(f"| E. Digital-twin sync reduction | {pct(dt['sync_reduction'])} | (qualitative) |\n\n")
         f.write(f"TD3 learned sensing duty {energy['proposed_duty']:.2f}, gamma "

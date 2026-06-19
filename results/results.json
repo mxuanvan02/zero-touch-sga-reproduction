@@ -1,7 +1,7 @@
 {
   "energy_savings": 0.20248495377723885,
   "payload_reduction": 0.46153846153846156,
-  "mapping_improvement": 0.09502498901639506,
+  "mapping_improvement": 0.13541029005757757,
   "fl_improvement": 0.2637269809089374,
   "dt_sync_reduction": 0.748,
   "detail": {
@@ -46,9 +46,9 @@
       }
     },
     "mapping": {
-      "acc_sweep": 0.49696129059504873,
-      "acc_ig": 0.5437053691122279,
-      "improvement": 0.09502498901639506
+      "acc_sweep": 0.5411687586821956,
+      "acc_ig": 0.6073326157601354,
+      "improvement": 0.13541029005757757
     },
     "federated": {
       "local_acc": 0.7891999999999999,

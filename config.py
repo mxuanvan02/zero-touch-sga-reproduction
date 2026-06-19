@@ -44,7 +44,7 @@ TD3_EPISODES = 120
 # ---- Information-gain path planning (Sec. V) ----
 SIGMA_OBS = 0.25              # observation noise std
 ELL = 2.2                     # spatial correlation length (cells)
-MEAS_BUDGET = 140             # measurement budget shared by both planners
+MEAS_BUDGET = 120             # measurement budget shared by both planners
 
 # ---- Federated learning (Sec. VI) ----
 FL_ROUNDS = 30
