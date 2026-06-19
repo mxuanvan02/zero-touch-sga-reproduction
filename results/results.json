@@ -62,6 +62,39 @@
       "mean_div_periodic": 0.5233652852624009,
       "mean_div_adaptive": 0.695268722584539
     },
+    "scalability": {
+      "rows": [
+        {
+          "V": 1,
+          "energy_per_uav": 23.6,
+          "mission_time": 45.0,
+          "comm_fl": 0.56,
+          "comm_cent": 0.28
+        },
+        {
+          "V": 3,
+          "energy_per_uav": 17.400000000000002,
+          "mission_time": 18.333333333333336,
+          "comm_fl": 1.6800000000000002,
+          "comm_cent": 2.5200000000000005
+        },
+        {
+          "V": 5,
+          "energy_per_uav": 16.16,
+          "mission_time": 13.0,
+          "comm_fl": 2.8000000000000003,
+          "comm_cent": 7.000000000000001
+        },
+        {
+          "V": 10,
+          "energy_per_uav": 15.23,
+          "mission_time": 9.0,
+          "comm_fl": 5.6000000000000005,
+          "comm_cent": 28.000000000000004
+        }
+      ],
+      "energy_reduction_1to10": 0.35466101694915253
+    },
     "paper_targets": {
       "energy_savings": 0.182,
       "payload_reduction": 0.456,

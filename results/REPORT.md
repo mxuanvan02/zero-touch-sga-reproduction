@@ -9,6 +9,7 @@ Paper-faithful reproduction of the five mechanisms. Exp. A uses a full TD3 agent
 | C. Mapping F1 gain (information gain vs GREEDY) | 13.5% | 12.3% |
 | D. FedAvg accuracy gain vs local (NN, non-IID) | 26.4% | (qualitative) |
 | E. Digital-twin sync reduction | 74.8% | (qualitative) |
+| F. Energy/UAV reduction (V=1->10, scalability) | 35.5% | 35.6% |
 
 TD3 learned sensing duty 0.48, gamma 0.66; mission deficit 0.2 (0 = all sensor quotas met).
 
@@ -22,8 +23,18 @@ TD3 learned sensing duty 0.48, gamma 0.66; mission deficit 0.2 (0 = all sensor q
 | NON-SEM | 8.2 | 6.1 | 4.20 | 5.20 | 23.70 |
 | FIXED | 8.2 | 6.1 | 7.10 | 4.20 | 25.60 |
 
+### Scalability (Sec. IX.G, Fig. 9)
+
+| V | Energy/UAV (Wh) | Mission time (min) | Comm FL O(V) | Comm CENT O(V^2) |
+|---|---|---|---|---|
+| 1 | 23.60 | 45.00 | 0.56 | 0.28 |
+| 3 | 17.40 | 18.33 | 1.68 | 2.52 |
+| 5 | 16.16 | 13.00 | 2.80 | 7.00 |
+| 10 | 15.23 | 9.00 | 5.60 | 28.00 |
+
 ## Figures
 - `fig1_headline.png` - headline gains vs reported
 - `fig2_energy.png` - adaptive activation convergence
-- `fig3_mapping.png` - belief-map reconstruction
+- `fig3_mapping.png` - detection F1 (IG vs GREEDY)
 - `fig4_federated.png` - federated convergence
+- `fig5_scalability.png` - scalability with fleet size
