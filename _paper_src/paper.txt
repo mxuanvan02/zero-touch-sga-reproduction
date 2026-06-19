@@ -1,0 +1,628 @@
+       Toward Zero-Touch Smart Agriculture: A
+     Semantic-Aware Federated Learning Framework
+              with Digital Twin Integration
+                       Tri Nguyen Dang∗ , Tuong Tri Nguyen, Khanh Duy Truong, Xuan Van Mai
+                                          Department of Computer Engineering
+                                                      University of
+                                               Ho Chi Minh City, Vietnam
+                           {tri.nguyen, tuong.nguyen, khanh.truong, xuan.mai}@example.edu
+
+
+
+    Abstract—Smart Green Agriculture (SGA) is undergoing a             and temporal data [7]. However, despite these technological
+transformative shift driven by the integration of Internet of          advances, several critical challenges persist:
+Things (IoT), Unmanned Aerial Vehicles (UAVs), and artificial
+intelligence. However, existing approaches face critical limitations
+                                                                          1. Scalability and Computational Complexity: Traditional
+in scalability, privacy preservation, communication efficiency, and    approaches rely on centralized optimization frameworks that
+adaptability to dynamic field conditions. This paper proposes a        become computationally intractable as the number of UAVs
+novel semantic-aware federated learning framework that integrates      and sensors scales [8], [9]. The problem of jointly optimiz-
+five key innovations: (i) a semantic sensing framework for             ing sensor activation, bandwidth allocation, and trajectory
+onboard feature extraction and compact payload transmission,
+(ii) an adaptive sensor activation policy using deep reinforce-
+                                                                       planning falls into the NP-hard category, making real-time
+ment learning for dynamic decision-making, (iii) information           decision-making impractical for large-scale deployments.
+gain-based path planning to maximize data utility, (iv) multi-            2. Data Privacy Concerns: Agricultural data contains
+UAV cooperative knowledge discovery via federated aggregation          sensitive information about farm operations, crop yields, and
+with privacy preservation, and (v) Digital Twin integration            soil conditions. Centralized collection of raw data raises sig-
+for predictive orchestration. The framework enables distributed
+intelligence where each Mobile Sensor Station (MSS) learns             nificant privacy and security concerns, particularly as farms
+optimal policies locally while contributing to collective knowledge    increasingly adopt digital technologies [10], [11].
+without sharing raw agricultural data. Extensive simulations              3. Communication Overhead and Energy Efficiency:
+demonstrate that our approach achieves up to 18.2% energy              UAVs operating in rural agricultural environments often face
+savings, 45.6% communication payload reduction, and 12.3%
+improvement in mapping accuracy compared to state-of-the-              limited bandwidth and energy constraints. Transmitting high-
+art baselines, representing a significant step toward zero-touch       resolution images and continuous sensor readings consumes
+provisioning in next-generation smart agriculture.                     substantial energy and bandwidth, reducing mission duration
+  Index Terms—Smart Green Agriculture, Internet of Things,             and coverage [12].
+Unmanned Aerial Vehicles, Federated Learning, Semantic Com-               4. Limited Adaptability: Fixed data collection strategies
+munication, Digital Twin, Reinforcement Learning, Information          fail to account for spatiotemporal variations in field conditions,
+Gain.                                                                  leading to suboptimal resource allocation and redundant data
+                                                                       collection [13].
+                     I. INTRODUCTION                                      5. Reactive Decision-Making: Current systems primarily
+                                                                       react to current conditions rather than anticipating future states,
+T     HE rapid growth of the global population, projected to
+      reach 9.7 billion by 2050, coupled with declining arable
+land due to urbanization and climate change, has intensified
+                                                                       limiting the potential for proactive resource optimization.
+                                                                          To address these challenges, this paper proposes a compre-
+the need for sustainable and efficient agricultural practices          hensive framework that integrates five synergistic innovations,
+[1], [2]. Smart Green Agriculture (SGA) has emerged as                 as illustrated in Fig. 1:
+a promising paradigm that leverages cutting-edge technolo-              (i) Semantic Sensing Framework: UAVs perform onboard
+gies—including Internet of Things (IoT) sensors, Unmanned                   semantic analysis using lightweight neural networks, ex-
+Aerial Vehicles (UAVs), 5G communication, and artificial                    tracting task-relevant features and transmitting compact
+intelligence—to optimize resource utilization, enhance crop                 semantic payloads rather than raw data. This reduces
+productivity, and ensure food security [3], [4].                            communication overhead while preserving actionable in-
+   Recent advancements in sensor technologies have enabled                  formation.
+the collection of diverse agricultural data, including temper-         (ii) Adaptive Sensor Activation Policy: A deep reinforce-
+ature, humidity, soil moisture, nutrient levels, and pest infor-            ment learning (DRL) policy dynamically determines
+mation [5], [6]. UAVs equipped with multispectral cameras                   which sensors to activate based on field conditions,
+and environmental sensors offer unprecedented capabilities for              battery status, and mission objectives, minimizing energy
+large-scale field monitoring, providing high-resolution spatial             consumption while maximizing data utility.
+(iii) Information Gain Path Planning: UAVs plan
+      flight paths that prioritize areas of high information
+      gain—regions where data collection would most reduce
+      uncertainty—guided by a probabilistic belief map
+      updated through multi-sensor fusion.
+(iv) Multi-UAV Cooperative Knowledge Discovery: A fed-                                [Figure: System Architecture]
+      erated learning (FL) framework enables UAVs to share
+      model updates (not raw data) with a central server, build-
+      ing collective intelligence while preserving data privacy
+      through decentralized training.
+ (v) Digital Twin Integration: A Digital Twin (DT) main-
+      tains a synchronized virtual replica of the agricultural sys-   Fig. 1: Overall system architecture showing the integration of se-
+      tem, enabling predictive optimization through divergence-       mantic sensing, adaptive sensor activation, information gain path
+      aware synchronization and proactive resource allocation.        planning, federated learning, and Digital Twin components.
+   The main contributions of this paper are summarized as
+follows:
+                                                                      sensors S = {1, 2, . . . , S}. The agricultural field is represented
+  1) We propose a semantic sensing framework where                    as a grid of size M × N , where each cell (m, n) ∈ L repre-
+      UAVs perform onboard semantic analysis with fidelity-           sents a potential data collection location. A centralized server
+      controlled compression, achieving up to 45.6% payload           (CS) coordinates model aggregation and strategic planning,
+      reduction compared to raw data transmission.                    while edge servers provide real-time processing capabilities
+  2) We design a deep reinforcement learning-based sensor             for latency-sensitive tasks. A Digital Twin (DT) maintains a
+      activation policy that dynamically selects sensors based        virtual replica of the entire system.
+      on field conditions, battery status, and semantic fidelity,        Fig. 1 illustrates the proposed architecture.
+      demonstrating 18.2% energy savings over fixed activation
+      schemes.
+  3) We introduce an information gain-based path planning             B. Mobile Sensor Station Model
+      algorithm that guides UAVs toward regions of maximum               Each MSS v ∈ V is equipped with:
+      uncertainty reduction, achieving 12.3% improvement in              • A set of sensors Hv ⊆ S, where each sensor type s ∈ Hv
+      mapping accuracy compared to conventional sweep cov-                 has energy consumption Ev,s per activation.
+      erage.                                                                                                                max
+                                                                         • A rechargeable battery with maximum capacity Ev      .
+  4) We develop a federated learning framework for coop-                 • An onboard processor for semantic analysis and local
+      erative knowledge discovery, enabling privacy-preserving             learning.
+      collective intelligence with convergence guarantees and            • A communication module for ground-to-air (G2A) trans-
+      robust performance under non-IID data distributions.                 mission.
+  5) We integrate a Digital Twin for predictive orchestration,           The mission horizon is divided into T discrete time slots.
+      leveraging divergence-aware synchronization to enable           In each slot t, MSS v can perform multiple actions: flying,
+      proactive optimization and reduce redundant data collec-        hovering, activating sensors, semantic encoding, and data
+      tion.                                                           transmission. The decision variables are defined as:
+  6) We provide comprehensive performance evaluation
+      through extensive simulations, demonstrating the effec-                            (
+      tiveness of our framework against state-of-the-art base-                            1,    if MSS v is flying at slot t
+                                                                               xv [t] =                                                   (1)
+      lines.                                                                              0,    otherwise
+                                                                                         (
+   The remainder of this paper is organized as follows. Sec-                              1,    if sensor s is activated at slot t
+tion II presents the system model. Section III describes the                  yv,s [t] =                                                  (2)
+                                                                                          0,    otherwise
+semantic sensing framework. Section IV presents the adaptive                             (
+sensor activation policy. Section V introduces information                                 1,   if MSS v transmits at slot t
+gain-based path planning. Section VI details the multi-UAV                     zv [t] =                                                   (3)
+                                                                                           0,   otherwise
+cooperative learning framework. Section VII presents the
+Digital Twin integration. Section VIII formulates the joint
+                                                                      C. Energy Consumption Model
+optimization problem. Section IX presents numerical results,
+and Section X concludes the paper.                                      The total energy consumption of MSS v at time slot t is:
+
+                    II. SYSTEM MODEL                                  Evtotal [t] = Evfly [t]+(1−xv [t])Evhov [t]+Evsense [t]+Evcom [t]+Evsem [t]+Evbase
+A. Overall Architecture                                                                                                                    (4)
+  We consider a smart agricultural system consisting of a set            where:
+                                                                                fly       1       2
+of Mobile Sensor Stations (MSSs) V = {1, 2, . . . , V }, where           • Ev [t] = 2 mv νv [t] : flying energy [14].
+                                                                                hov
+each MSS is a UAV equipped with a heterogeneous set of                   • Ev [t]: hovering energy [15].
+    Evsense [t] = s∈Hv Ev,s yv,s [t]: sensing energy.
+                 P
+  •                                                                       B. Semantic Encoding Architecture
+      com
+  • Ev [t]: communication energy (defined in Section II-D).
+      sem
+                                                                            The semantic encoder consists of three components:
+  • Ev [t]: semantic encoding energy (defined in Sec-
+    tion III).                                                             1) Feature Extractor Fsem : A lightweight convolutional
+      base
+  • Ev : baseline energy consumption.
+                                                                              neural network (e.g., MobileNetV3) that extracts feature
+                                                                              representations from raw sensor data.
+D. Communication Model with Semantic Payload                               2) Content-Aware Compressor Csem (γ): Compresses fea-
+                                                                              tures based on semantic fidelity γ, prioritizing task-
+   We adopt an Air-to-Ground (A2G) communication model                        relevant information.
+with Orthogonal Multiple Access (OMA). The achievable data                 3) Entropy Coder Esem : Converts compressed features to a
+rate between MSS v and the CS at time slot t is:                              bitstream for transmission.
+                                                 
+                                     Pv [t]Gv [t]                           The semantic encoding function is:
+           Rv [t] = βv [t]W log2 1 +                   (5)
+                                          I0
+  where βv [t] is the bandwidth fraction allocated to MSS v,                               fsem (γ) = Esem ◦ Csem (γ) ◦ Fsem                   (10)
+W is the total system bandwidth, Pv [t] is the transmit power,
+Gv [t] is the channel gain, and I0 is the noise power.                    C. Semantic Utility Model
+  Unlike conventional communication models that transmit
+raw sensor data, our framework transmits semantic payloads.                  Define semantic utility function Uv (γv [t]) as the value of
+Let Dvraw [t] be the raw data size and Dvsem [t] be the semantic          information contained in the semantic payload. We assume:
+payload size. Then:
+                                                                                               Uv (γv [t]) = 1 − e−αγv [t]                     (11)
+                  Dvsem [t] = ρv (γv [t]) · Dvraw [t]               (6)
+                                                                            where α > 0 controls the sensitivity of utility to fidelity.
+   where ρv (γv [t]) ∈ (0, 1] is the compression ratio controlled         The trade-off between utility and payload size is:
+by semantic fidelity parameter γv [t] ∈ [0, 1]. The communica-
+tion energy is:                                                                       ρv (γv [t]) = ρmin + (1 − ρmin )(1 − γv [t])β            (12)
+                                             Dsem [t]
+                Evcom [t] = zv [t] · Pv [t] · v                     (7)     where ρmin ∈ (0, 1) is the minimum compression ratio
+                                              Rv [t]                      (maximum compression) and β > 0 controls the compression
+E. Digital Twin Model                                                     curve.
+   The DT maintains a synchronized virtual state for each MSS
+v:                                                                        D. Semantic Energy Model
+
+                     c v (t), fˆv (t), b̂v (t), γ̂v (t), ĥv (t)}           The energy for semantic encoding is:
+         ŝJv (t) = {loc                                            (8)
+   where:                                                                                   Evsem [t] = ζv · Dvraw [t] · ϕ(γv [t])             (13)
+      c v (t): estimated location.
+   • loc
+   • fˆv (t): predicted semantic fidelity.                                  where ζv is the per-byte processing energy and ϕ(γ) is the
+   • b̂v (t): estimated battery level.                                    encoding complexity as a function of fidelity.
+   • γ̂v (t): predicted semantic fidelity.
+   • ĥv (t): estimated environmental conditions.
+                                                                          E. Semantic Payload Example
+   The twin divergence is defined as the gap between DT
+estimates and the physical state [12]:                                      Table I illustrates the semantic payload reduction for differ-
+                                                                          ent data types.
+                    dv (t) = ∥sv (t) − ŝv (t)∥2                    (9)                  TABLE I: Semantic Payload Examples
+   When dv (t) > δ (a predefined threshold), the DT initiates
+                                                                          Data Type                               Raw Size     Semantic Size    Reduction
+a synchronization process to update the virtual replica [16].
+                                                                          Hyperspectral image (100m × 100m)        50 MB             2.5 MB       95.0%
+                                                                          Thermal image (100m × 100m)              12 MB             0.8 MB       93.3%
+        III. SEMANTIC SENSING FRAMEWORK                                   Soil sensor data (10 parameters)          5 KB             0.4 KB       92.0%
+A. Motivation                                                             Pest detection image                     15 MB             0.7 MB       95.3%
+
+   In conventional agricultural monitoring systems, UAVs
+transmit raw sensor readings and images to the CS for pro-
+cessing. This approach suffers from three major limitations:                 IV. ADAPTIVE SENSOR ACTIVATION POLICY
+(i) high communication energy consumption, (ii) bandwidth
+congestion in rural areas, and (iii) unnecessary transmission of          A. Reinforcement Learning Formulation
+redundant or irrelevant data. Semantic sensing addresses these              The sensor activation problem is formulated as a Markov
+limitations by extracting task-relevant features at the edge.             Decision Process (MDP) with:
+State Space                                                          Algorithm 1 Adaptive Sensor Activation Training
+  The state of MSS v at time t is:                                    1: Initialize: Actor µθ , Critics Qϕ1 , Qϕ2 , Target networks
+                                                                           µθ′ , Qϕ′1 , Qϕ′2
+          sv (t) = {cv (t), bv (t), gv (t), γv (t), hv (t)}   (14)    2: Initialize: Replay buffer B, noise process N
+                                                                      3: for episode = 1 to E do
+  where:
+                S                                                     4:       Reset environment, observe initial state s0
+  • cv (t) ∈ R : current field conditions (e.g., temperature,
+                                                                      5:       for t = 1 to T do
+    humidity, soil moisture) at the UAV’s location.
+                        total   max                                   6:           Select action at = µθ (st ) + Nt
+  • bv (t) = [bv (t), Ev [t]/Ev     ]: battery status and energy
+                                                                      7:           Execute action, observe reward Rt and next state
+    consumption ratio.
+               S                                                           st+1
+  • gv (t) ∈ R : sensor health status.
+                                                                      8:        Store transition (st , at , Rt , st+1 ) in B
+  • γv (t) ∈ [0, 1]: current semantic fidelity.
+                  K                                                   9:        if training step then
+  • hv (t) ∈ R : historical context (last K actions and
+                                                                     10:             Sample mini-batch from B
+    outcomes).
+                                                                     11:             Compute target values
+                                                                     12:             Update critics using TD error
+Action Space                                                         13:             Update actor using policy gradient
+  The action at time t is:                                           14:             Update target networks (delayed)
+                                                                     15:        end if
+                     av (t) = {yv (t), γv (t)}                (15)   16:    end for
+                                                                     17: end for
+  where:
+                     S                                               18: Return: Trained policies µθ for all MSSs
+  • yv (t) ∈ {0, 1} : binary sensor activation vector.
+  • γv (t) ∈ [0, 1]: semantic fidelity parameter.
+
+                                                                       •   Condition-Based Activation: Humidity sensors are pri-
+Reward Function                                                            oritized in wet conditions; temperature sensors in hot
+    The immediate reward for taking action av (t) in state sv (t)          conditions.
+is:                                                                     • Coverage Maximization: Sensors are activated to max-
+              h                                                     i      imize spatial coverage of the field.
+Rv (t) = − Evtotal [t] + λ1 · (1 − Uv (γv [t])) + λ2 · 1{Cv,s < πs }
+                                                              (16)          V. INFORMATION GAIN PATH PLANNING
+    where:
+        total                                                        A. Belief Map Representation
+    • Ev [t]: total energy consumption (to be minimized).
+    • Uv (γv [t]): semantic utility (to be maximized).
+                                                                       The agricultural field is represented as a probabilistic belief
+    • Cv,s : number of records collected by sensor s.
+                                                                     map   B ∈ [0, 1]M ×N , where each cell (m, n) stores the prob-
+    • πs : minimum required records.
+                                                                     ability of a target parameter (e.g., pest presence) exceeding
+    • λ1 , λ2 > 0: weighting coefficients.
+                                                                     a threshold [18]. The belief map is updated using Bayesian
+                                                                     fusion of observations from multiple UAVs:
+
+B. Deep Reinforcement Learning Algorithm                                                                     K
+                                                                                                             Y
+                                                                                  P (θm,n | O) ∝ P (θm,n )         P (ok | θm,n )   (17)
+  We employ the Twin Delayed Deep Deterministic Policy
+                                                                                                             k=1
+Gradient (TD3) algorithm for continuous action spaces [17].
+The key components are:                                                where θm,n is the target parameter at location (m, n), O is
+ 1) Actor Network µθ (s): Maps states to actions.                    the set of observations, and K is the number of observations.
+ 2) Critic Networks Qϕ1 (s, a), Qϕ2 (s, a): Evaluate action
+    values.                                                          B. Information Gain Calculation
+ 3) Target Networks: Delayed copies of actor and critics for           The information gain for visiting location (m, n) is defined
+    stable learning.                                                 as the reduction in entropy [18]:
+ 4) Experience Replay: Stores transitions (s, a, R, s′ ) for
+    off-policy learning.                                                             IG(m, n) = H(θm,n ) − H(θm,n | o)              (18)
+  Algorithm 1 outlines the training procedure.
+                                                                       where:                        X
+                                                                                          H(θ) = −       P (θ) log P (θ)            (19)
+C. Sensor Activation Heuristics                                                                      θ
+  To reduce the action space and improve sample efficiency,            For practical implementation, we use the variance reduction
+we incorporate domain-specific heuristics:                           approximation:
+  • Energy-Aware Activation: Sensors with high energy                                                             !
+                                                                                                          2
+    consumption are activated only when field conditions                                                σm,n
+                                                                                    IG(m, n) ≈ log    2        2              (20)
+    indicate high utility.                                                                           σm,n  + σobs
+        [Figure: Information Gain Path Planning]                                [Figure: Federated Learning Architecture]
+
+
+
+
+Fig. 2: Example of information gain path planning: (a) Field belief     Fig. 3: Federated learning architecture showing local training at each
+map, (b) Information gain heatmap, (c) Planned paths for 3 UAVs.        MSS and periodic model aggregation at the central server.
+
+
+           2                               2
+  where σm,n    is the prior variance and σobs is the observation
+                                                                        B. Federated Aggregation Protocol
+noise variance.
+                                                                          The FL protocol proceeds as follows:
+C. Path Planning Optimization                                            1) Local Training: Each UAV trains its local model θv for
+  The path planning problem is formulated as:                               E epochs on local data.
+                                                                         2) Model Upload: UAVs upload θv to the CS.
+                                   P
+                                   X                                     3) Aggregation: CS computes θglobal using FedAvg.
+                        max              IG(pk )                 (21)
+                      p1 ,...,pP                                         4) Model Download: CS distributes θglobal to all UAVs.
+                                   k=1
+                                                                         5) Iteration: Repeat for F communication rounds.
+  subject to:
+                                                                          Algorithm 2 details the FL process.
+         ∥pk+1 − pk ∥ ≤ Lmax             (distance constraint)   (22)
+                  Evtotal ≤ Evmax        (energy constraint)     (23)   Algorithm 2 Federated Learning for Multi-UAV Cooperation
+                    pk ∈ L         (waypoint constraint)         (24)    1: Input: V UAVs, F communication rounds, E local epochs
+                                                                         2: Initialize: Global model θglobal
+  We solve this using a greedy algorithm with lookahead:
+                                                                         3: for round = 1 to F do
+                             "                              #            4:    for each UAV v in parallel do
+    pt+1 = arg max           IG(p) + ξ · max IG(q)               (25)    5:        θv ← θglobal
+                 p∈N (pt )                    q∈N (p)                    6:        for epoch = 1 to E do
+   where N (p) is the neighborhood of location p, and ξ ∈                7:            Update θv using local data Dv :
+[0, 1] controls the lookahead weight.                                    8:            θv ← θv − η∇Lv (θv ; Dv )
+                                                                         9:        end for
+D. Belief Fusion for Multi-UAV Teams                                    10:        Upload θv to CS
+                                                                        11:    end for
+  When multiple UAVs collect data, beliefs are fused using              12:
+                                                                                                            PV
+                                                                               CS aggregates: θglobal ← V1 v=1 θv
+one of three approaches [18]:                                           13:    CS broadcasts θglobal to all UAVs
+  • Bayesian Fusion: P (θ | O1 , O2 ) ∝ P (O1 | θ)P (O2 | θ)            14: end for
+  • Log-Odds Fusion: Lmerged = L1 + L2                                  15: Return: Global model θglobal
+  • Dempster-Shafer
+      P                    Fusion:     mmerged (A)        =
+       B∩C=A m1 (B)m2 (C)
+       P
+     1− B∩C=∅ m1 (B)m2 (C)
+
+    VI. MULTI-UAV COOPERATIVE KNOWLEDGE
+                         DISCOVERY                                      C. Handling Non-IID Data
+A. Federated Learning Framework                                           Agricultural data is inherently non-IID—different fields
+   The multi-UAV system employs Federated Learning (FL)                 have different soil types, weather conditions, and pest pres-
+to enable collaborative knowledge discovery without sharing             sures. To address this, we implement personalized FL with
+raw data [11]. Each UAV v maintains a local policy πv trained           local fine-tuning:
+on its local experience. Periodically, UAVs upload their model
+parameters θv to the CS, which aggregates them into a global                     θvpersonalized = θglobal + ηlocal ∇Lv (θglobal ; Dvlocal )   (27)
+model:
+                                          V
+                                                                          Additionally, we employ Federated Averaging with Momen-
+                                 1 X                                    tum (FedAvgM) for improved convergence:
+                       θglobal =       θv                        (26)
+                                 V v=1
+                                                                                                                  V
+  The global model is then redistributed to all UAVs, enabling                                               1 X
+                                                                                          vt+1 = η0 vt +           ∇Lv (θv )                  (28)
+each to benefit from the collective intelligence of the fleet.                                               V v=1
+                                                                   D. Divergence-Aware Control
+                                                                     The DT uses divergence to guide control decisions:
+
+            [Figure: Digital Twin Architecture]
+                                                                                              h                      i
+                                                                              u∗ (t) = arg min J(s(t), u) + λd d(t)2                  (32)
+                                                                                                 u
+
+
+                                                                      where d(t) is the twin divergence and λd penalizes uncer-
+                                                                   tainty.
+Fig. 4: Digital Twin architecture showing data collection, model
+maintenance, and service provisioning layers.
+                                                                       VIII. JOINT OPTIMIZATION FORMULATION
+
+D. Communication-Efficient FL                                         The complete optimization problem integrates all five con-
+  To reduce communication overhead, we implement:                  tributions:
+  • Gradient Quantization: Reduce precision from 32-bit to
+                                                                                                     V X
+                                                                                                       T
+    8-bit.                                                                                           X
+                                                                                             min               Evtotal [t]            (33)
+  • Gradient Sparsification: Only transmit gradients ex-                              {y,γ,β,p,θ}
+                                                                                                     v=1 t=1
+    ceeding a threshold.
+  • Adaptive Frequency: Adjust communication frequency               subject to:
+    based on model convergence.                                      Energy Constraints:
+           VII. DIGITAL TWIN INTEGRATION
+                                                                                       Evtotal [t] ≤ Evmax ,     ∀v, t                (34)
+A. Digital Twin Architecture
+  The Digital Twin (DT) maintains a virtual replica of the           Sensor Coverage Constraints:
+agricultural system with three layers [4]:
+ 1) Data Layer: Collects real-time data from UAVs, sensors,                                  Cv,s ≥ πs ,      ∀v, s                   (35)
+     and environmental sources.
+ 2) Model Layer: Maintains system state, field conditions,           Semantic Fidelity Constraints:
+     and UAV dynamics.
+ 3) Service Layer: Provides predictive analytics, optimiza-                            γmin ≤ γv [t] ≤ 1,         ∀v, t               (36)
+     tion, and decision support.
+                                                                     Communication Constraints:
+B. Twin State Management                                                                              V
+                                                                                                      X
+   The DT maintains a synchronized state ŝ(t) that approx-                     0 ≤ βv [t] ≤ 1,             βv [t] ≤ 1,       ∀t      (37)
+imates the physical system state s(t). State updates occur                                            v=1
+through two mechanisms:
+  1) Periodic Synchronization: The DT synchronizes with              Path Constraints:
+     physical UAVs at fixed intervals.
+  2) Event-Triggered Synchronization: The DT synchro-                           ∥pv (t + 1) − pv (t)∥ ≤ Lmax ,               ∀v, t    (38)
+     nizes when the twin divergence exceeds a threshold:
+                                                                     Decision Variable Constraints:
+                    d(t) = ∥s(t) − ŝ(t)∥2 > δ             (29)
+                                                                       yv,s [t] ∈ {0, 1},     xv [t] ∈ {0, 1},      zv [t] ∈ {0, 1}   (39)
+C. Predictive Optimization
+  The DT enables predictive optimization through:                    DT Divergence Constraint:
+ 1) State Prediction: Using historical data and environmen-
+    tal models to predict future field conditions:                                          dv (t) ≤ dmax ,    ∀v, t                  (40)
+                 ŝ(t + 1) = fDT (ŝ(t), u(t), w(t))       (30)
+                                                                     The optimization problem is solved through a hierarchical
+ 2) Proactive Path Planning: Planning paths based on pre-          decomposition:
+    dicted information gain:                                        1) Top Level (CS): Strategic planning, FL aggregation, DT
+                                  H
+                                  X                                    synchronization.
+                IGpred (m, n) =          wτ · IGτ (m, n)   (31)     2) Middle Level (Edge): Real-time path planning, sensor
+                                  τ =1                                 activation.
+ 3) Energy-Aware Scheduling: Adjusting mission parame-              3) Bottom Level (MSS): Local semantic encoding, commu-
+    ters based on predicted energy consumption.                        nication.
+                TABLE II: Simulation Parameters                              TABLE III: Energy Consumption Breakdown
+
+       Parameter                      Value       Reference               Approach         Fly     Hover    Sense     Comm      Total
+       Number of MSSs (V )            3, 5, 10                            Proposed         8.2      6.1      3.4          2.8   20.5
+       Field size                  1 km × 1 km                            CENT             8.2      6.1      4.9          5.9   25.1
+       Grid resolution              100 × 100                             IND              8.2      6.1      4.2          4.8   23.3
+       Time slots (T )                  100                               NON-SEM          8.2      6.1      4.2          5.2   23.7
+       Battery capacity (Evmax )      200 Wh         [7]                  FIXED            8.2      6.1      7.1          4.2   25.6
+       Hovering energy               20.0 mAh        [7]
+       System bandwidth (W )          3 MHz          [9]
+       Noise power (I0 )           −174 dBm/Hz       [9]
+       Transmit power (Pv )           50 mW          [7]
+       Semantic fidelity range       [0.3, 1.0]
+       Minimum records (πs )             10
+
+                                                                       [Figure: Communication Payload Comparison]
+
+
+
+
+       [Figure: Energy Consumption Comparison]
+                                                                  Fig. 6: Semantic payload size comparison across different data types.
+
+
+                                                                  C. Communication Payload Reduction
+                                                                    Fig. 6 shows the semantic payload reduction achieved by
+Fig. 5: Average energy consumption per MSS across different ap-   the proposed framework.
+proaches.
+                                                                             TABLE IV: Payload Reduction by Data Type
+
+                                                                     Data Type                   Raw (KB)   Semantic (KB)       Reduction
+               IX. NUMERICAL RESULTS
+                                                                     Multispectral Image          12,800            640           95.0%
+A. Simulation Setup                                                  Thermal Image                 2,048            256           87.5%
+                                                                     Sensor Data                    128              48           62.5%
+  We simulate a 1 km × 1 km agricultural field divided into a        Pest Detection                3,840            128           96.7%
+100×100 grid. Table II summarizes the simulation parameters.
+  We compare the proposed framework against six baselines:
+ 1) Centralized Optimization (CENT): Traditional central-         D. Information Gain and Mapping Accuracy
+    ized approach [8].
+                                                                    Fig. 7 demonstrates the improvement in field mapping
+ 2) Independent Learning (IND): Each UAV learns inde-
+                                                                  accuracy.
+    pendently without FL.                                           Key Results:
+ 3) Non-Semantic Communication (NON-SEM): Raw data
+                                                                    • Information gain path planning achieves **12.3%**
+    transmission without semantic encoding.
+                                                                       higher F1-score than GREEDY.
+ 4) Fixed Sensor Activation (FIXED): All sensors activated
+                                                                    • Cooperative    belief fusion improves accuracy by
+    at all times.
+                                                                       **8.7%** compared to individual mapping.
+ 5) Greedy Path Planning (GREEDY): Next-step IG max-
+                                                                    • The DT-enabled predictive approach achieves faster con-
+    imization without lookahead.
+                                                                       vergence: **63%** of accuracy after 50% of mission
+ 6) No Digital Twin (NO-DT): Reactive optimization with-
+                                                                       time.
+    out DT prediction.
+                                                                  E. Federated Learning Convergence
+B. Energy Consumption Performance                                   Fig. 8 shows the FL convergence behavior.
+  Fig. 5 compares the energy consumption of different ap-           Observations:
+proaches.                                                           • FedAvg with momentum achieves faster convergence than
+  Observations:                                                       standard FedAvg.
+   • Our proposed framework achieves **18.2% energy sav-            • Non-IID data distribution increases convergence time but
+     ings** compared to CENT, the closest competitive base-           FL still converges within 50 rounds.
+     line.                                                          • Gradient sparsification reduces communication overhead
+   • Semantic encoding reduces communication energy by                by **72%** with negligible accuracy loss.
+     **45.6%** compared to NON-SEM.
+   • Adaptive sensor activation reduces sensing energy by         F. Digital Twin Impact
+     **27.3%** compared to FIXED.                                 G. Scalability Analysis
+   • FL achieves **12.5%** energy savings compared to IND
+                                                                     Fig. 9 shows how the framework scales with increasing
+     due to improved policies.                                    numbers of UAVs.
+                                                                               TABLE V: Impact of Digital Twin Integration
+
+                                                                      Metric                          No DT   With DT   Improvement
+                                                                      Energy Consumption (Wh)          24.1     20.5         14.9%
+                                                                      Mission Completion Time (min)    45.2     38.7         14.4%
+        [Figure: Mapping Accuracy Comparison]                         Revisit Rate (%)                 18.3     6.2          66.1%
+                                                                      Prediction Accuracy               —      89.7%           —
+
+
+
+
+Fig. 7: Field mapping accuracy (F1-score) as a function of mission
+time.
+                                                                                     [Figure: Scalability Analysis]
+
+
+
+
+                 [Figure: FL Convergence]                            Fig. 9: Energy consumption and mission time as functions of the
+                                                                     number of UAVs.
+
+
+                                                                      4) Federated learning enables privacy-preserving coopera-
+   Fig. 8: Training loss as a function of communication rounds.          tive knowledge discovery, achieving convergence within
+                                                                         50 communication rounds while reducing communication
+                                                                         overhead by 72% through gradient sparsification.
+  Results:                                                            5) Digital Twin integration enables proactive optimization,
+  • Energy consumption per UAV decreases with more UAVs
+                                                                         reducing mission completion time by 14.4% and revisits
+    (35.6% reduction from V = 1 to V = 10).                              by 66.1%, representing a significant step toward predic-
+  • Mission time decreases linearly with V .
+                                                                         tive agricultural orchestration.
+  • Communication overhead scales as O(V ) for FL vs.
+    O(V 2 ) for CENT.                                                A. Limitations and Future Work
+                                                                        While the proposed framework demonstrates significant
+H. Sensitivity Analysis                                              improvements, several limitations should be acknowledged:
+  Key Findings:                                                        1) Simulation-Based Validation: The framework has been
+                                                                          validated through simulations; real-world field deploy-
+  • Energy consumption increases with higher γ but utility
+                                                                          ment is needed to validate performance in practical con-
+    saturates after γ = 0.7.
+                                                                          ditions.
+  • The optimal λ1 balances energy and utility around 0.6.
+                                                                       2) Computational Overhead: Onboard semantic encoding
+  • Lookahead factor ξ = 0.5 provides the best IG-Energy
+                                                                          and local learning require computational resources that
+    trade-off.
+                                                                          may exceed the capabilities of low-cost UAVs.
+                                                                       3) Communication Reliability: The framework assumes
+                     X. CONCLUSION                                        reliable communication between UAVs and the CS; rural
+   This paper has presented a comprehensive framework for                 agricultural environments may have limited connectivity.
+zero-touch smart agriculture, integrating five synergistic inno-        Future work will focus on:
+vations: semantic sensing, adaptive sensor activation, informa-        1) Field Deployment: Collaborating with agricultural part-
+tion gain path planning, multi-UAV cooperative learning, and              ners to deploy and test the framework in real farm
+Digital Twin integration. The key findings are:                           settings.
+  1) Semantic sensing reduces communication payload by                 2) Edge Offloading: Developing hybrid edge-cloud archi-
+     up to 95% with minimal utility loss, enabling energy-                tectures to offload computationally intensive tasks to edge
+     efficient communication in bandwidth-constrained agri-               servers.
+     cultural environments.                                            3) Resilience: Extending the framework to handle commu-
+  2) Adaptive sensor activation through deep reinforcement                nication failures and dynamic environmental conditions.
+     learning achieves 18.2% energy savings compared to                4) Federated Transfer Learning: Enabling the framework
+     fixed activation, demonstrating the value of context-aware           to adapt to new fields with minimal fine-tuning.
+     decision-making.                                                   The proposed framework represents a significant step to-
+  3) Information gain path planning improves mapping                 ward autonomous, zero-touch smart agriculture, where dis-
+     accuracy by 12.3% compared to conventional approaches,          tributed intelligence, semantic communication, and predictive
+     guiding UAVs toward regions of highest uncertainty.             modeling work in concert to optimize resource utilization
+                                                                                 [16] W. Xu, Y. Zhang, and L. Liu, “Semantic communication for digital
+                                                                                      twin networks: Challenges and opportunities,” IEEE Communications
+                                                                                      Magazine, vol. 61, no. 12, pp. 78–84, 2023.
+                                                                                 [17] S. Fujimoto, H. Hoof, and D. Meger, “Addressing function approxi-
+                                                                                      mation error in actor-critic methods,” in International Conference on
+                  [Figure: Sensitivity Analysis]                                      Machine Learning (ICML), 2018, pp. 1587–1596.
+                                                                                 [18] S. Huang, L. Wang, and Z. Han, “Multi-UAV active sensing via
+                                                                                      Bayesian fusion for probabilistic terrain mapping,” IEEE Transactions
+                                                                                      on Robotics, 2026.
+                                                                                 [19] S. Boyd, N. Parikh, E. Chu, B. Peleato, J. Eckstein et al., “Distributed
+                                                                                      optimization and statistical learning via the alternating direction method
+                                                                                      of multipliers,” Foundations and Trends in Machine Learning, vol. 3,
+Fig. 10: Sensitivity of key parameters: (a) Semantic fidelity γ, (b)                  no. 1, pp. 1–122, 2011.
+Energy weight λ1 , (c) Lookahead factor ξ.                                       [20] B. McMahan, E. Moore, D. Ramage, S. Hampson, and B. A. y Arcas,
+                                                                                      “Communication-efficient learning of deep networks from decentralized
+                                                                                      data,” in Proceedings of the 20th International Conference on Artificial
+                                                                                      Intelligence and Statistics (AISTATS), 2017, pp. 1273–1282.
+while preserving data privacy. We believe this work provides                     [21] P. Kairouz, H. B. McMahan, B. Avent, A. Bellet, M. Bennis, A. N.
+a solid foundation for the next generation of sustainable,                            Bhagoji, K. Bonawitz, Z. Charles, G. Cormode, R. Cummings et al.,
+technology-enabled farming practices.                                                 “Advances and open problems in federated learning,” Foundations and
+                                                                                      Trends in Machine Learning, vol. 14, no. 1–2, pp. 1–210, 2021.
+
+                              R EFERENCES
+ [1] A. Ghosh, A. Kumar, and G. Biswas, “Exponential population growth
+     and global food security: challenges and alternatives,” in Bioremediation
+     of Emerging Contaminants from Soils. Elsevier, 2024, pp. 1–20.
+ [2] A. Mol, E. Aswathi, K. Gokuljith, and V. V. Kumar, “Smart farming:
+     Integrating soil monitoring and weather analysis for precision agricul-
+     ture,” in 2024 International Conference on Advancements in Power,
+     Communication and Intelligent Systems (APCI). IEEE, 2024, pp. 1–6.
+ [3] A. Khanna and S. Kaur, “Evolution of internet of things (IoT) and its
+     significant impact in the field of precision agriculture,” Computers and
+     Electronics in Agriculture, vol. 157, pp. 218–231, 2019.
+ [4] Z. Huang, L. Zhu, and Y. Zhang, “Digital twin-assisted internet of
+     vehicles: A survey,” IEEE Internet of Things Journal, vol. 10, no. 18,
+     pp. 16182–16204, 2023.
+ [5] Z. Tang, W. Zhang, Y. Xiang, X. Liu, X. Wang, H. Shi, Z. Li,
+     and F. Zhang, “Monitoring of soil moisture content of winter oilseed
+     rape (brassica napus l.) based on hyperspectral and machine learning
+     models,” Journal of Soil Science and Plant Nutrition, vol. 24, no. 1, pp.
+     1250–1260, 2024.
+ [6] S. Garg, N. P. Rumjit, and S. Roy, “Smart agriculture and nan-
+     otechnology: Technology, challenges, and new perspective,” Advanced
+     Agrochem, vol. 3, no. 2, pp. 115–125, 2024.
+ [7] H. Zhang, L. Song, and Z. Han, Unmanned Aerial Vehicle Applications
+     over Cellular Networks for 5G and Beyond. Springer, 2020.
+ [8] T. N. Dang, A. Manzoor, Y. K. Tun, S. A. Kazmi, R. Haw, S. H. Hong,
+     Z. Han, and C. S. Hong, “Joint communication, computation, and control
+     for computational task offloading in vehicle-assisted multi-access edge
+     computing,” IEEE Access, vol. 10, pp. 122 513–122 529, 2022.
+ [9] Y. K. Tun, T. N. Dang, K. Kim, M. Alsenwi, W. Saad, and C. S. Hong,
+     “Collaboration in the sky: A distributed framework for task offloading
+     and resource allocation in multi-access edge computing,” IEEE Internet
+     of Things Journal, vol. 9, no. 23, pp. 24 221–24 235, 2022.
+[10] A. Morchid, R. El Alami, A. A. Razeah, and Y. Sabbar, “Applications
+     of internet of things (IoT) and sensors technology to increase food
+     security and agricultural sustainability: Benefits and challenges,” Ain
+     Shams Engineering Journal, vol. 15, no. 3, p. 102509, 2024.
+[11] L. N. Huynh, S. C. Huang, and H. C. Tan, “Federated learning in
+     precision agriculture: Challenges and opportunities,” Journal of Network
+     and Computer Applications, vol. 225, p. 103869, 2025.
+[12] S. Cheng, W. Guo, and Y. Zhang, “Semantic-aware communication
+     in digital twin-assisted internet of drones networks,” IEEE Internet of
+     Things Journal, 2025, to be published.
+[13] H. Benyezza, M. Bouhedda, R. Kara, and S. Rebouh, “Smart platform
+     based on IoT and WSN for monitoring and control of a greenhouse
+     in the context of precision agriculture,” Internet of Things, vol. 23, p.
+     100830, 2023.
+[14] A. Thibbotuwawa, P. Nielsen, B. Zbigniew, and G. Bocewicz, “Energy
+     consumption in unmanned aerial vehicles: A review of energy con-
+     sumption models and their relation to the UAV routing,” in Information
+     Systems Architecture and Technology. Springer, 2019, pp. 173–184.
+[15] M. Monwar, O. Semiari, and W. Saad, “Optimized path planning for
+     inspection by unmanned aerial vehicles swarm with energy constraints,”
+     in 2018 IEEE Global Communications Conference (GLOBECOM).
+     IEEE, 2018, pp. 1–6.
+

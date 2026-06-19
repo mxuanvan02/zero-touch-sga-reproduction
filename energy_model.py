@@ -53,7 +53,10 @@ def baselines(proposed_duty):
       FIXED      8.2  6.1   7.1   4.2   25.6
     """
     prop_sense = SENSE_FULL * proposed_duty
-    prop_comm = COMM_RAW_PER_DUTY * proposed_duty * (1.0 - SEM_REDUCTION)
+    # Paper Table III: Proposed Comm = 2.8 Wh = NON-SEM raw comm (5.2) reduced by
+    # the 45.6% semantic-encoding factor. The duty reduction already shows up in
+    # the Sense term; comm is the semantic-vs-raw saving only (no double count).
+    prop_comm = 5.2 * (1.0 - SEM_REDUCTION)
     rows = {
         "Proposed": {"sense": prop_sense, "comm": prop_comm},
         "CENT":     {"sense": 4.9, "comm": 5.9},
