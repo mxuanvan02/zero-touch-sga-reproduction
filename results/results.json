@@ -1,0 +1,71 @@
+{
+  "energy_savings": 0.20248495377723885,
+  "payload_reduction": 0.46153846153846156,
+  "mapping_improvement": 0.09502498901639506,
+  "fl_improvement": 0.2637269809089374,
+  "dt_sync_reduction": 0.748,
+  "detail": {
+    "energy": {
+      "proposed_total": 20.017627660191305,
+      "cent_total": 25.1,
+      "proposed_duty": 0.4812000079512596,
+      "mean_gamma": 0.6592363733196259,
+      "savings": 0.20248495377723885,
+      "mean_deficit": 0.16,
+      "table3": {
+        "Proposed": {
+          "sense": 3.42,
+          "comm": 2.3,
+          "fly_hover": 14.3,
+          "total": 20.02
+        },
+        "CENT": {
+          "sense": 4.9,
+          "comm": 5.9,
+          "fly_hover": 14.3,
+          "total": 25.1
+        },
+        "IND": {
+          "sense": 4.2,
+          "comm": 4.8,
+          "fly_hover": 14.3,
+          "total": 23.3
+        },
+        "NON-SEM": {
+          "sense": 4.2,
+          "comm": 5.2,
+          "fly_hover": 14.3,
+          "total": 23.7
+        },
+        "FIXED": {
+          "sense": 7.1,
+          "comm": 4.2,
+          "fly_hover": 14.3,
+          "total": 25.6
+        }
+      }
+    },
+    "mapping": {
+      "acc_sweep": 0.49696129059504873,
+      "acc_ig": 0.5437053691122279,
+      "improvement": 0.09502498901639506
+    },
+    "federated": {
+      "local_acc": 0.7891999999999999,
+      "fed_acc": 0.9973333333333333,
+      "improvement": 0.2637269809089374
+    },
+    "digital_twin": {
+      "periodic_syncs": 500,
+      "adaptive_syncs": 126,
+      "sync_reduction": 0.748,
+      "mean_div_periodic": 0.5233652852624009,
+      "mean_div_adaptive": 0.695268722584539
+    },
+    "paper_targets": {
+      "energy_savings": 0.182,
+      "payload_reduction": 0.456,
+      "mapping_improvement": 0.123
+    }
+  }
+}
