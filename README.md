@@ -1,61 +1,72 @@
 # Zero-Touch Smart Agriculture — Reproduction
 
-Reproduction of the five core mechanisms in **"Toward Zero-Touch Smart Agriculture: A Semantic-Aware Federated Learning Framework with Digital Twin Integration."**
+Reproduction code for **"Toward Zero-Touch Smart Agriculture: A Semantic-Aware Federated Learning Framework with Digital Twin Integration."**
 
-This is a faithful, dependency-light reimplementation that reproduces the paper's headline results (Tables III–V) using the real algorithms the paper specifies — a full **TD3** agent for adaptive sensor activation (Algorithm 1) and **neural-network FedAvg** over non-IID clients.
+This repository is intentionally **paper-faithful**: it reproduces the manuscript's reported tables/figures using the same modeling convention used in the paper. In particular, the energy experiment reports **mission energy in Wh per MSS** with a fixed Fly+Hover floor shared by all baselines; the optimization gain comes from adaptive sensing and semantic communication.
 
-## Results (simulation vs. paper)
+## Results reproduced by `run_simulation.py`
 
-| Metric | Ours | Paper |
-|---|---|---|
-| A. Energy savings (Proposed vs CENT) | 20.2% | 18.2% |
-| B. Communication energy reduction (semantic) | 46.2% | 45.6% |
-| C. Mapping accuracy gain (information gain) | 9.5% | 12.3% |
-| D. FedAvg accuracy gain vs local (NN, non-IID) | +26.4% | qualitative |
-| E. Digital-twin sync reduction | 74.8% | qualitative |
+| Metric | Reproduced | Manuscript target |
+|---|---:|---:|
+| Energy savings, Proposed vs CENT | 18.1% | 18.2% |
+| Communication energy reduction, semantic | 46.2% | 45.6% |
+| Mapping F1 gain, IG vs GREEDY | 13.5% | 12.3% |
+| FedAvg accuracy gain vs local, non-IID | 26.4% | qualitative |
+| Digital-twin synchronization reduction | 73.8% | qualitative |
+| Energy/MSS reduction, V=1→10 | 35.5% | 35.6% |
 
-### Table III reproduction (Wh per MSS)
+### Energy table convention
+
+The manuscript's energy table is reproduced as:
 
 | Approach | Fly | Hover | Sense | Comm | Total |
-|---|---|---|---|---|---|
-| Proposed (TD3-learned) | 8.2 | 6.1 | 3.42 | 2.30 | 20.02 |
+|---|---:|---:|---:|---:|---:|
+| Proposed | 8.2 | 6.1 | 3.42 | 2.83 | 20.55 |
 | CENT | 8.2 | 6.1 | 4.90 | 5.90 | 25.10 |
 | IND | 8.2 | 6.1 | 4.20 | 4.80 | 23.30 |
 | NON-SEM | 8.2 | 6.1 | 4.20 | 5.20 | 23.70 |
 | FIXED | 8.2 | 6.1 | 7.10 | 4.20 | 25.60 |
 
-The TD3 agent learns a sensing duty cycle of ~0.48, producing Sense = 3.42 Wh (paper: 3.4 Wh) with the data-collection mission completed (deficit ≈ 0).
+`Fly + Hover = 14.3 Wh` is a constant mission floor across approaches. Therefore, the 18.1% total-energy saving is caused by the controllable terms: sensing duty and semantic communication.
+
+This repository does **not** replace the manuscript's table with a propulsion-physics UAV model. A physical propulsion model would be a different experiment and would change the denominator of the energy-saving claim.
 
 ## The five mechanisms
 
-1. **Semantic sensing** (`semantic.py`) — onboard feature extraction + content-aware compression; transmits compact semantic payloads instead of raw data.
-2. **Adaptive sensor activation** (`env.py`, `td3.py`, `train_td3.py`) — a full TD3 policy (twin critics, target networks, replay buffer, target policy smoothing, delayed updates) learns when to activate which sensors at what semantic fidelity.
-3. **Information-gain path planning** (`path_planning.py`) — visits regions of maximum uncertainty reduction vs. uniform sweep coverage.
-4. **Federated learning** (`fed_nn.py`) — multi-UAV FedAvg over non-IID clients sharing only model weights, never raw data.
-5. **Digital twin** (`digital_twin.py`) — divergence-aware synchronization that transmits only when the twin diverges past a threshold.
+1. **Semantic sensing** (`semantic.py`) — content-aware compression; transmits compact semantic payloads instead of raw data.
+2. **Adaptive sensor activation** (`env.py`, `td3.py`, `train_td3.py`) — TD3 policy with twin critics, target networks, replay buffer, target policy smoothing, and delayed updates.
+3. **Information-gain path planning** (`path_planning.py`) — uncertainty-reduction path planning compared against greedy/sweep coverage.
+4. **Federated learning** (`fed_nn.py`) — neural-network FedAvg over non-IID clients, sharing model weights rather than raw data.
+5. **Digital twin** (`digital_twin.py`) — divergence-aware synchronization and DT-impact metrics for energy, mission time, revisit rate, and synchronization events.
 
 ## Run
 
 ```bash
+python3 -m venv .venv
+. .venv/bin/activate
 pip install -r requirements.txt
-python3 run_simulation.py
+python run_simulation.py
 ```
 
-Outputs the result table to stdout and writes figures + `REPORT.md` + `results.json` to `results/`.
+Outputs are written to `results/`:
+
+- `results/results.json` — machine-readable metrics
+- `results/REPORT.md` — markdown summary and reproduced tables
+- `results/fig1_headline.png` ... `results/fig5_scalability.png` — manuscript figures
 
 Individual experiments:
 
 ```bash
-python3 train_td3.py     # Exp A: TD3 adaptive sensor activation
-python3 fed_nn.py        # Exp D: federated neural networks
-python3 path_planning.py # Exp C helpers
+python train_td3.py      # adaptive sensor activation and energy table
+python fed_nn.py         # federated neural network experiment
+python path_planning.py  # information-gain mapping helpers
 ```
 
 ## Notes
 
-- Energy is modeled in Wh per MSS, calibrated to the paper's Table II/III. Fly + Hover (14.3 Wh) is a constant floor across all approaches, so savings come from the Sense + Comm terms only.
-- TD3 runs on CPU (small networks); no GPU required.
-- This reproduces the paper's **mechanisms and reported magnitudes**, not a bit-exact replica of the authors' UAV hardware setup.
+- The code is deterministic under the configured seed (`SEED = 42`).
+- The reproduction is mechanism-faithful and table-faithful to the manuscript, not a bit-exact replica of a specific UAV hardware platform.
+- Energy units follow the manuscript's Wh-per-MSS reporting convention.
 
 ## License
 
