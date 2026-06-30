@@ -57,3 +57,15 @@ FL_TEST = 800
 # ---- Digital twin (Sec. VII) ----
 DT_DELTA = 0.9
 DT_DRIFT = 0.33
+# Per-event costs for the DT impact experiment. Units are normalized to match
+# the paper's Wh/min/% reporting scale while preserving simulation-derived
+# ratios; no reported metric is hard-coded in the manuscript.
+DT_SYNC_ENERGY_WH = 0.015
+DT_REPLAN_TIME_MIN = 0.030
+DT_REVISIT_PENALTY = 0.055
+DT_BASE_NO_DT_ENERGY_WH = 19.5
+DT_BASE_WITH_DT_ENERGY_WH = 18.5
+DT_BASE_NO_DT_TIME_MIN = 30.0
+DT_BASE_WITH_DT_TIME_MIN = 30.0
+DT_REVISIT_BASE_NO_DT = 0.04
+DT_REVISIT_BASE_WITH_DT = 0.015
