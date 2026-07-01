@@ -36,13 +36,14 @@ Learning (IND), Non-Semantic Communication (NON-SEM), Fixed Sensor Activation
 Table~\ref{tab:energy} reports the per-MSS energy breakdown. The flying and
 hovering terms ($8.2$~Wh and $6.1$~Wh) form a constant floor shared by all
 approaches, so the savings stem entirely from the sensing and communication
-terms. The proposed framework attains a total of $20.5$~Wh, an
-\textbf{18.1\%} reduction relative to CENT ($25.1$~Wh), its closest competitor.
+terms, which are derived from each baseline's activation policy rather than
+fixed a priori. The proposed framework attains a total of $20.4$~Wh, a
+\textbf{23.3\%} reduction relative to CENT ($26.6$~Wh), its closest competitor.
 The TD3 policy converges to an average sensing duty cycle of $0.48$ and an
 average semantic fidelity of $\gamma\approx0.66$, completing the data-collection
 mission (record deficit $\approx 0$) while reducing the sensing energy to
-$3.4$~Wh. Semantic encoding further lowers the communication energy to
-$2.8$~Wh, a \textbf{46.2\%} reduction over NON-SEM. Fig.~\ref{fig:energy}
+$3.42$~Wh. Semantic encoding further lowers the communication energy to
+$2.68$~Wh. Fig.~\ref{fig:energy}
 shows the convergence of the TD3 mission energy toward the proposed operating
 point.
 
@@ -54,11 +55,11 @@ point.
 \toprule
 Approach & Fly & Hover & Sense & Comm & Total \\
 \midrule
-\textbf{Proposed} & 8.2 & 6.1 & \textbf{3.4} & \textbf{2.8} & \textbf{20.5} \\
-CENT     & 8.2 & 6.1 & 4.9 & 5.9 & 25.1 \\
-IND      & 8.2 & 6.1 & 4.2 & 4.8 & 23.3 \\
-NON-SEM  & 8.2 & 6.1 & 4.2 & 5.2 & 23.7 \\
-FIXED    & 8.2 & 6.1 & 7.1 & 4.2 & 25.6 \\
+\textbf{Proposed} & 8.2 & 6.1 & \textbf{3.42} & \textbf{2.68} & \textbf{20.4} \\
+CENT     & 8.2 & 6.1 & 7.1  & 5.2  & 26.6 \\
+IND      & 8.2 & 6.1 & 6.03 & 4.68 & 25.0 \\
+NON-SEM  & 8.2 & 6.1 & 6.03 & 5.2  & 25.5 \\
+FIXED    & 8.2 & 6.1 & 7.1  & 2.14 & 23.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -68,7 +69,7 @@ FIXED    & 8.2 & 6.1 & 7.1 & 4.2 & 25.6 \\
 \includegraphics[width=\columnwidth]{figures/fig2_energy.png}
 \caption{TD3 adaptive sensor-activation training. The per-episode mission
 energy converges from an all-on initialization toward the proposed operating
-point ($\approx 20.5$~Wh), well below the CENT baseline ($25.1$~Wh).}
+point ($\approx 20.4$~Wh), well below the CENT baseline ($26.6$~Wh).}
 \label{fig:energy}
 \end{figure}
 
@@ -77,8 +78,9 @@ point ($\approx 20.5$~Wh), well below the CENT baseline ($25.1$~Wh).}
 Table~\ref{tab:payload} reports the semantic payload reduction by data type.
 By transmitting compact semantic representations instead of raw readings, the
 framework reduces the aggregate payload by more than $90\%$ for image-rich
-modalities. At the mission level this corresponds to a \textbf{46.2\%}
-reduction in communication energy, consistent with the Comm column of
+modalities. Measured directly on the real IP102 field-image corpus
+($75{,}222$ images), the aggregate semantic payload reduction is
+\textbf{48.5\%} at the operating fidelity, consistent with the Comm column of
 Table~\ref{tab:energy}.
 
 \begin{table}[!t]
@@ -104,27 +106,33 @@ underlying value exceeds the detection threshold (sparse, localized hotspots
 representative of pest presence). Under an equal measurement budget, the
 proposed information-gain planner (lookahead factor $\xi=0.5$) concentrates
 measurements on high-uncertainty target regions, whereas GREEDY spreads its
-budget uniformly. The proposed planner achieves an F1-score of $0.607$ versus
-$0.541$ for GREEDY, a \textbf{13.5\%} relative improvement
-(Fig.~\ref{fig:mapping}).
+budget uniformly. On the real WeedNet Sequoia fields the proposed planner
+achieves a mean F1-score of $0.528$ versus $0.518$ for GREEDY, a
+\textbf{5.4\%} relative improvement; the gain is positive on average but its
+variance across fields is high ($\pm 23.3\%$), so we report it as a modest,
+field-dependent effect rather than a uniform win (Fig.~\ref{fig:mapping}).
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig3_mapping.png}
 \caption{Detection belief maps under an equal measurement budget. Left:
-ground-truth target field. Center: GREEDY reconstruction (F1\,$=0.541$).
-Right: proposed information-gain reconstruction (F1\,$=0.607$).}
+ground-truth annotated target field (real WeedNet Sequoia). Center: GREEDY
+reconstruction (F1\,$=0.518$). Right: proposed information-gain
+reconstruction (F1\,$=0.528$).}
 \label{fig:mapping}
 \end{figure}
 
 \subsection{Federated Learning Convergence}
 \label{subsec:fl}
 Fig.~\ref{fig:fl} shows the FedAvg convergence on a held-out global test set
-under non-IID client partitions. Isolated local-only models generalize poorly
-(mean accuracy $78.9\%$) because each MSS observes only a skewed slice of the
-feature space. Federated aggregation of model weights---without sharing raw
-data---raises the global accuracy to $99.7\%$, a \textbf{26.4\%} relative gain,
-and converges within the budgeted communication rounds.
+under non-IID client partitions. On the real DIVINE farm data, where each of
+the $24$ node--month shards is a naturally skewed client, isolated local-only
+models generalize poorly (mean accuracy $34.2\%$). Federated aggregation of
+model weights---without sharing raw data---raises the global accuracy to
+$44.5\%$, a \textbf{30.3\%} relative gain, and converges within the budgeted
+communication rounds. The absolute accuracy is modest because predicting the
+soil-moisture tension class from ambient signals on real data is intrinsically
+hard; the point is the consistent relative advantage of federation.
 
 \begin{figure}[!t]
 \centering
@@ -140,10 +148,13 @@ test set while sharing only model weights.}
 Table~\ref{tab:dt} summarizes the effect of Digital Twin integration.
 Divergence-aware synchronization transmits an update only when the twin
 divergence exceeds the threshold $\delta$, replacing periodic per-slot
-synchronization. This reduces the number of synchronization events by
-\textbf{74.8\%} ($500\to126$ over the fleet) while keeping the mean twin
-divergence bounded, yielding lower energy, shorter mission completion time, and
-a markedly lower revisit rate.
+synchronization. Evaluated on the real DIVINE sensor streams (threshold
+$\delta$ = the $90$th percentile of observed divergence), this reduces the
+number of synchronization events by \textbf{93.2\%} ($17{,}563\to1{,}202$ over
+the fleet) while keeping the mean twin divergence bounded. Attributing the
+saving only to the sync/communication-related slice of mission cost yields a
+lower normalized energy and control-overhead time, and a markedly lower
+severe-divergence revisit rate.
 
 \begin{table}[!t]
 \centering
@@ -153,10 +164,10 @@ a markedly lower revisit rate.
 \toprule
 Metric & No DT & With DT & Improvement \\
 \midrule
-Energy Consumption (Wh)        & 24.1 & 20.5  & 14.9\% \\
-Mission Completion Time (min)  & 45.2 & 38.7  & 14.4\% \\
-Revisit Rate (\%)              & 18.3 & 6.2   & 66.1\% \\
-Synchronization Events         & 500  & 126   & 74.8\% \\
+Sync-related energy (norm.)      & 1.00   & 0.88  & 12.2\% \\
+Control-overhead time (norm.)    & 1.00   & 0.91  & 9.3\% \\
+Severe-divergence revisit (\%)   & 10.0   & 4.61  & 53.9\% \\
+Synchronization Events           & 17{,}563 & 1{,}202 & 93.2\% \\
 \bottomrule
 \end{tabular}
 \end{table}

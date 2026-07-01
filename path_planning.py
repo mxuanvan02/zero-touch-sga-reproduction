@@ -1,3 +1,4 @@
+import os
 """Information-gain path planning (paper Sec. V), F1-score evaluation.
 
 Faithful to the paper's reported result:
@@ -125,13 +126,47 @@ def plan_and_reconstruct(field, budget, xi=0.0, thresh=None, seed=1):
     return est
 
 
-def run_mapping_experiment(seed=C.SEED, xi=0.5):
-    field = make_field(seed)
-    thresh = float(np.quantile(field, 0.88))          # sparse targets = top ~12%
+def _load_real_field(index, downscale=8, band="SequoiaNdvi_30", split="train"):
+    """Load a REAL WeedNet NDVI field + its annotation mask. Returns
+    (field, target_mask) or raises if the dataset is absent."""
+    from weednet_data import load_field, list_fields
+    n = len(list_fields(band=band, split=split))
+    if n == 0:
+        raise FileNotFoundError("no WeedNet fields")
+    field, target = load_field(band=band, split=split,
+                               index=index % n, downscale=downscale)
+    return field, target
+
+
+def run_mapping_experiment(seed=C.SEED, xi=0.5, source=None):
+    """Run the IG-vs-GREEDY mapping experiment.
+
+    source='weednet' scores both planners against a REAL NDVI orthomosaic and
+    its measured crop/weed annotation mask (no synthetic field, no injected
+    threshold). source='synthetic' keeps the legacy Gaussian field. Selected by
+    the `source` arg, the MAP_SOURCE env var, else defaults to 'weednet'.
+    """
+    source = (source or os.environ.get("MAP_SOURCE", "weednet")).lower()
+    if source == "weednet":
+        # deterministic field pick from the seed; target is the real mask
+        field, target = _load_real_field(index=seed)
+        # detection threshold from the field's own distribution so the belief
+        # comparison is well-posed; targets themselves come from the real mask
+        thresh = float(np.quantile(field, 1.0 - max(target.mean(), 1e-3)))
+    else:
+        field = make_field(seed)
+        target = None
+        thresh = float(np.quantile(field, 0.88))
+
     est_greedy = plan_and_reconstruct(field, C.MEAS_BUDGET, xi=0.0, thresh=thresh, seed=1)
     est_prop = plan_and_reconstruct(field, C.MEAS_BUDGET, xi=xi, thresh=thresh, seed=1)
-    f1_greedy = f1_score(est_greedy, field, thresh)
-    f1_prop = f1_score(est_prop, field, thresh)
+    if target is None:
+        f1_greedy = f1_score(est_greedy, field, thresh)
+        f1_prop = f1_score(est_prop, field, thresh)
+    else:
+        # score belief maps against the REAL annotation mask
+        f1_greedy = _f1_vs_mask(est_greedy, target, thresh)
+        f1_prop = _f1_vs_mask(est_prop, target, thresh)
     improvement = (f1_prop - f1_greedy) / max(f1_greedy, 1e-9)
     return {
         "f1_greedy": float(f1_greedy),
@@ -143,6 +178,20 @@ def run_mapping_experiment(seed=C.SEED, xi=0.5):
         "acc_sweep": float(f1_greedy),  # aliases for runner/report
         "acc_ig": float(f1_prop),
     }
+
+
+def _f1_vs_mask(est, target_mask, thresh):
+    """Detection F1 of the belief map `est` against a REAL boolean target mask."""
+    pred = est > thresh
+    truth = target_mask.astype(bool)
+    tp = float(np.sum(pred & truth))
+    fp = float(np.sum(pred & ~truth))
+    fn = float(np.sum(~pred & truth))
+    if tp == 0:
+        return 0.0
+    prec = tp / (tp + fp)
+    rec = tp / (tp + fn)
+    return 2 * prec * rec / (prec + rec + 1e-12)
 
 
 def run_mapping_experiment_avg(n_seeds=15, base=100, xi=0.5):

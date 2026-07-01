@@ -1,75 +1,73 @@
-"""Energy model + baselines, calibrated to paper Table III (Wh per MSS).
+"""Energy model + baselines (per-MSS mission energy, Wh).
 
-The paper reports a fixed energy breakdown table, not raw coefficients. We
-reproduce that table with an explicit additive model
+Design contract (project rule): NOTHING is a hand-typed result. Every
+Sense/Comm/Total number is COMPUTED from physical coefficients (config.py) and
+each baseline's *behaviour policy* (duty cycle, whether it transmits semantic or
+raw payloads, and how often it transmits). Change a coefficient or a policy and
+every number moves accordingly -- so the table is a model output, not a target.
 
-    E_total = E_fly+hover (const) + E_sense + E_comm
-
-and define each baseline by HOW it sets sensing duty and whether it uses
-semantic (compressed) or raw communication. The TD3 agent (train_td3.py) is
-the learning engine that produces the "Proposed" adaptive sensing duty; here
-we expose the structural comparison and the headline 18.2% = Proposed vs CENT.
+Model
+    E_total = E_fly_hover (const floor) + E_sense + E_comm
+    E_sense = SENSE_FULL * duty                       (SENSE_FULL = sum(SENSOR_ENERGY)*T)
+    E_comm  = COMM_FULL  * comm_duty * (rho(gamma) if semantic else 1)
+              (COMM_FULL = KC_RAW * T)
+The "Proposed" row uses the TD3-learned duty (runtime), semantic comm at the
+learned gamma, and the same comm model as every baseline.
 """
 import numpy as np
 import config as C
+from semantic import compression_ratio
 
-FLY_HOVER = C.E_FLY_HOVER          # 14.3 Wh constant floor (identical for all)
-SENSE_FULL = float(C.SENSOR_ENERGY.sum()) * C.T    # 7.1 Wh = all sensors, all slots
-COMM_RAW = C.KC_RAW * C.T                            # 5.2 Wh = raw comm every slot
-SEM_REDUCTION = 0.456              # paper: semantic encoding cuts comm by 45.6%
-# Raw comm per unit sensing duty, calibrated so NON-SEM (raw, duty=4.2/7.1=0.59)
-# transmits 5.2 Wh -> COMM_RAW_PER_DUTY = 5.2 / 0.59.
-NONSEM_DUTY = 4.2 / SENSE_FULL
-COMM_RAW_PER_DUTY = 5.2 / NONSEM_DUTY
+FLY_HOVER = C.E_FLY_HOVER                       # constant floor, identical for all
+SENSE_FULL = float(C.SENSOR_ENERGY.sum()) * C.T  # full-activation sensing energy
+COMM_FULL = C.KC_RAW * C.T                        # full raw-transmission comm energy
 
 
 def sense_energy(duty):
-    """Sensing energy for a given average activation duty cycle in [0,1]."""
-    return SENSE_FULL * duty
+    """Sensing energy for an average activation duty cycle in [0,1]."""
+    return SENSE_FULL * float(duty)
 
 
-def comm_energy(duty, semantic=True, gamma=0.30):
-    """Communication energy. Semantic transmission scales raw comm by the
-    compression ratio rho(gamma); raw transmission does not."""
-    base = COMM_RAW * duty
+def comm_energy(comm_duty, semantic, gamma):
+    """Communication energy: raw baseline scaled by transmit duty, and by the
+    semantic compression ratio rho(gamma) when semantic encoding is used."""
+    e = COMM_FULL * float(comm_duty)
     if semantic:
-        return base * compression_ratio(gamma)
-    return base
+        e *= compression_ratio(gamma)
+    return e
 
 
-def baselines(proposed_duty):
-    """Reproduce Table III. proposed_duty is the TD3-learned sensing duty.
+def _row(duty, comm_duty, semantic, gamma):
+    s = sense_energy(duty)
+    c = comm_energy(comm_duty, semantic, gamma)
+    return {"sense": s, "comm": c, "fly_hover": FLY_HOVER,
+            "total": FLY_HOVER + s + c}
 
-    Proposed sensing energy = 7.1 * duty (TD3 learns duty ~0.48 -> 3.4 Wh).
-    Proposed comm energy = raw-equivalent comm at that duty, reduced by the
-    paper's 45.6% semantic encoding factor.
 
-    Calibrated component values (Wh) match the paper:
-      Approach   Fly  Hover Sense Comm  Total
-      Proposed   8.2  6.1   3.4   2.8   20.5
-      CENT       8.2  6.1   4.9   5.9   25.1
-      IND        8.2  6.1   4.2   4.8   23.3
-      NON-SEM    8.2  6.1   4.2   5.2   23.7
-      FIXED      8.2  6.1   7.1   4.2   25.6
+def baselines(proposed_duty, proposed_gamma=None, proposed_comm_duty=1.0):
+    """Compute the energy breakdown for Proposed + every baseline policy.
+
+    proposed_duty / proposed_gamma come from the TD3 run (train_td3.py); the
+    baseline policies come from config.BASELINE_POLICIES. Nothing is typed by
+    hand -- each cell is _row(...) evaluated on a policy.
     """
-    prop_sense = SENSE_FULL * proposed_duty
-    # Paper Table III: Proposed Comm = 2.8 Wh = NON-SEM raw comm (5.2) reduced by
-    # the 45.6% semantic-encoding factor. The duty reduction already shows up in
-    # the Sense term; comm is the semantic-vs-raw saving only (no double count).
-    prop_comm = 5.2 * (1.0 - SEM_REDUCTION)
-    rows = {
-        "Proposed": {"sense": prop_sense, "comm": prop_comm},
-        "CENT":     {"sense": 4.9, "comm": 5.9},
-        "IND":      {"sense": 4.2, "comm": 4.8},
-        "NON-SEM":  {"sense": 4.2, "comm": 5.2},
-        "FIXED":    {"sense": SENSE_FULL, "comm": 4.2},
-    }
-    for name, r in rows.items():
-        r["fly_hover"] = FLY_HOVER
-        r["total"] = FLY_HOVER + r["sense"] + r["comm"]
+    gamma = C.GAMMA[0] if proposed_gamma is None else float(proposed_gamma)
+    rows = {"Proposed": _row(proposed_duty, proposed_comm_duty, True, gamma)}
+    for name, p in C.BASELINE_POLICIES.items():
+        rows[name] = _row(p["duty"], p["comm_duty"], p["semantic"], p["gamma"])
     return rows
 
 
-def headline_savings(rows):
-    """18.2% = Proposed vs CENT (closest competitive baseline, per paper)."""
-    return 1.0 - rows["Proposed"]["total"] / rows["CENT"]["total"]
+def headline_savings(rows, ref="CENT"):
+    """Relative total-energy saving of Proposed vs a reference baseline.
+    Computed from the model outputs -- not asserted."""
+    return 1.0 - rows["Proposed"]["total"] / rows[ref]["total"]
+
+
+if __name__ == "__main__":
+    # Demo with a representative learned duty; real value comes from train_td3.
+    rows = baselines(proposed_duty=0.48, proposed_gamma=0.66)
+    print(f"{'Approach':<10}{'Sense':>7}{'Comm':>7}{'Total':>8}")
+    for name, r in rows.items():
+        print(f"{name:<10}{r['sense']:>7.2f}{r['comm']:>7.2f}{r['total']:>8.2f}")
+    print(f"Saving vs CENT: {100*headline_savings(rows):.1f}%")
