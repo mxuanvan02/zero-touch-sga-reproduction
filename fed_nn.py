@@ -10,6 +10,7 @@ Faithful to the paper's claim: privacy-preserving collective intelligence
 that is robust under non-IID data.
 """
 import warnings; warnings.filterwarnings("ignore")
+import os
 import numpy as np
 import torch
 import torch.nn as nn
@@ -75,11 +76,38 @@ def _avg_state(states):
     return out
 
 
-def run_federated_nn(seed=C.SEED, n_clients=C.V, rounds=25, local_steps=10, lr=0.05):
-    torch.manual_seed(seed)
+def _load_task(seed, n_clients, source, divine_dir):
+    """Return (clients, test, meta). source='divine' uses real DIVINE data;
+    source='synthetic' keeps the legacy Gaussian generator (fallback only)."""
+    if source == "divine":
+        from divine_data import build_federated_task
+        clients_named, test, meta = build_federated_task(seed=seed, divine_dir=divine_dir)
+        clients = [(X, y) for (X, y, _name) in clients_named]
+        return clients, test, meta
+    # ---- synthetic fallback ----
     rng = np.random.default_rng(seed)
     dim, n_classes = 10, 3
     clients, test = _make_noniid_clients(rng, n_clients, dim, n_classes)
+    meta = {"n_clients": len(clients), "n_features": dim, "n_classes": n_classes,
+            "source": "synthetic"}
+    return clients, test, meta
+
+
+def run_federated_nn(seed=C.SEED, n_clients=C.V, rounds=25, local_steps=10, lr=0.05,
+                     source=None, divine_dir=None):
+    """FedAvg vs isolated local-only on a non-IID task.
+
+    Data source is selected (in priority order) by the explicit `source` arg, the
+    FL_SOURCE env var, else defaults to real DIVINE data. Model shape (input dim,
+    #classes) is taken from the task meta -- never hard-coded -- so the same code
+    runs on synthetic or real data without edits.
+    """
+    source = (source or os.environ.get("FL_SOURCE", "divine")).lower()
+    torch.manual_seed(seed)
+
+    clients, test, meta = _load_task(seed, n_clients, source, divine_dir)
+    dim = meta["n_features"]
+    n_classes = meta["n_classes"]
 
     # ---- isolated local-only: each client trains alone, eval on global test ----
     local_accs = []
@@ -109,11 +137,14 @@ def run_federated_nn(seed=C.SEED, n_clients=C.V, rounds=25, local_steps=10, lr=0
         "fed_acc": float(fed_acc),
         "improvement": float(improvement),
         "curve": curve,
+        "meta": meta,
     }
 
 
 if __name__ == "__main__":
+    import json
     r = run_federated_nn()
+    print("task meta:", json.dumps(r["meta"], ensure_ascii=False))
     print(f"Local-only acc (mean): {r['local_acc']:.3f}")
     print(f"FedAvg acc:            {r['fed_acc']:.3f}")
     print(f"Improvement:           {100*r['improvement']:.1f}%")

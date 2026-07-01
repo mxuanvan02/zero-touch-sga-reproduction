@@ -29,11 +29,28 @@ LAMBDA1 = 0.6                 # utility weight (paper sensitivity analysis: opti
 # ---- Energy model calibrated to paper Table III (Wh per MSS) ----
 # Fly + Hover = constant floor, identical across every approach.
 E_FLY_HOVER = 14.3            # 8.2 (fly) + 6.1 (hover)
-# Per-sensor sensing energy. FIXED activates all sensors every slot -> Sense=7.1.
-#   sum(SENSOR_ENERGY) * T = 7.1  ->  sum = 0.071
-SENSOR_ENERGY = np.array([0.013, 0.018, 0.012, 0.016, 0.012])   # sums to 0.071
-# Raw transmission every slot -> NON-SEM Comm = 5.2 Wh.
-KC_RAW = 5.2 / 100.0          # raw comm energy per transmitted slot (T=100 ref)
+# Per-sensor sensing energy (Wh per activation). Physical per-sensor draw; the
+# full-activation sensing energy is sum(SENSOR_ENERGY)*T, computed downstream.
+SENSOR_ENERGY = np.array([0.013, 0.018, 0.012, 0.016, 0.012])   # Wh/activation
+# Raw comm energy per transmitted slot (Wh). Full raw transmission every slot
+# gives KC_RAW*T; semantic compression scales this by rho(gamma) downstream.
+KC_RAW = 5.2 / 100.0          # Wh per transmitted slot
+
+# ---- Baseline POLICIES (behaviour only; results are COMPUTED, never typed) ----
+# Each baseline is defined ONLY by what it DOES, not by its energy numbers:
+#   duty          = average sensing duty cycle in [0,1]
+#   semantic      = does it transmit semantically-compressed payloads?
+#   comm_duty     = fraction of slots it transmits on (CENT streams continuously;
+#                   IND transmits less often; NON-SEM/FIXED per their scheme)
+# Sense/Comm/Total are then derived downstream from SENSOR_ENERGY, KC_RAW,
+# compression_ratio(gamma) and T. No Wh value is hand-entered, so the numbers
+# fall out of the model and change if the coefficients change.
+BASELINE_POLICIES = {
+    "CENT":    {"duty": 1.00, "semantic": False, "comm_duty": 1.00, "gamma": 0.30},
+    "IND":     {"duty": 0.85, "semantic": False, "comm_duty": 0.90, "gamma": 0.30},
+    "NON-SEM": {"duty": 0.85, "semantic": False, "comm_duty": 1.00, "gamma": 0.30},
+    "FIXED":   {"duty": 1.00, "semantic": True,  "comm_duty": 0.80, "gamma": 0.30},
+}
 # Minimum records per sensor (paper Table II: pi_s = 10).
 MIN_RECORDS = np.array([10, 10, 10, 10, 10])
 RAW_SIZE = np.array([50.0, 12.0, 0.5, 15.0, 8.0])     # relative raw reading sizes (Exp. B)

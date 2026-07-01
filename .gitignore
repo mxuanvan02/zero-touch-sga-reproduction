@@ -13,6 +13,12 @@ paper/figures/
 paper/*.pdf
 results/__pycache__/
 
+# Datasets - downloaded via scripts/download_datasets.sh, never committed
+# (WeedNet ~0.2GB, IP102 ~3.9GB, DIVINE ~5MB). Kept local; see README.
+datasets/
+*.tar
+*.zip
+
 # OS / editor
 .DS_Store
 *.swp
